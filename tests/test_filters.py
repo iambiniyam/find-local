@@ -192,7 +192,7 @@ def test_exact_filename_surfaces_without_semantic_overlap(tmp_path):
     results = search(store, HashEmbedder(), "zebra-report", limit=5)
     assert [Path(result.path).name for result in results] == ["alpha.md", "zebra-report.md"]
 
-    without_boost = search(store, HashEmbedder(), "zebra-report", limit=5, filename_boost=0)
+    without_boost = search(store, HashEmbedder(), "zebra-report", limit=5, filename_boost=0, keyword_weight=0)
     assert _names(without_boost) == {"alpha.md"}
 
 
@@ -208,3 +208,19 @@ def test_path_tokens_contribute_to_filename_boost(tmp_path):
     results = search(store, HashEmbedder(), "budget", limit=5)
     assert _names(results) == {"notes.md"}
     assert "budget" in Path(results[0].path).parts
+
+
+def test_keyword_boost_ranks_exact_text(tmp_path):
+    (tmp_path / "a.md").write_text("quarterly zebra migration notes")
+    (tmp_path / "b.md").write_text("unrelated budget notes")
+    store = Store(tmp_path / "index.db")
+    Indexer(store, HashEmbedder()).index_paths([tmp_path])
+    results = search(store, HashEmbedder(), "zebra", limit=5, keyword_weight=1.0, filename_boost=0)
+    assert results[0].path.endswith("a.md")
+
+
+def test_keyword_punctuation_is_safe(tmp_path):
+    (tmp_path / "a.md").write_text("budget report")
+    store = Store(tmp_path / "index.db")
+    Indexer(store, HashEmbedder()).index_paths([tmp_path])
+    assert search(store, HashEmbedder(), 'budget "report" - Q1', limit=5, keyword_weight=0.5)

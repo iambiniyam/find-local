@@ -120,6 +120,18 @@ def _tokens(text: str) -> list[str]:
     return re.findall(r"[^\W_]+", text.lower())
 
 
+def _keyword_score(text: str, query: str) -> float:
+    """Cheap keyword overlap used to complement the embedding score."""
+    wanted = list(dict.fromkeys(_tokens(query)))
+    if not wanted:
+        return 0.0
+    have = set(_tokens(text))
+    matched = sum(1 for term in wanted if term in have)
+    coverage = matched / len(wanted)
+    phrase = " ".join(wanted) in " ".join(_tokens(text))
+    return min(1.0, coverage * 0.8 + (0.2 if phrase else 0.0))
+
+
 def _filename_match(path: str, query: str) -> float:
     """Return 0..1 query-token coverage in the file name, then the parent path.
 
@@ -190,13 +202,21 @@ class Result:
         }
 
 
-def _best_per_file(rows, query: np.ndarray) -> dict[str, tuple[float, str, str, int]]:
+def _best_per_file(
+    rows,
+    query: np.ndarray,
+    query_text: str,
+    keyword_weight: float,
+) -> dict[str, tuple[float, str, str, int]]:
     best: dict[str, tuple[float, str, str, int]] = {}
     for row in rows:
         vector = np.frombuffer(row["embedding"], dtype=np.float32)
         if vector.shape[0] != query.shape[0]:
             continue
-        score = float(vector @ query)
+        cosine = max(-1.0, min(1.0, float(vector @ query)))
+        vector_score = max(0.0, cosine)
+        keyword = _keyword_score(row["text"], query_text)
+        score = (1.0 - keyword_weight) * vector_score + keyword_weight * keyword
         path = row["path"]
         if path not in best or score > best[path][0]:
             best[path] = (score, row["text"], row["kind"], int(row["size"]))
@@ -255,6 +275,7 @@ def search(
     max_size: float | str | None = None,
     folder: str | Path | None = None,
     filename_boost: float = FILENAME_BOOST,
+    keyword_weight: float = 0.25,
 ) -> list[Result]:
     """Return the best files for ``query``.
 
@@ -277,6 +298,7 @@ def search(
     if min_bytes is not None and max_bytes is not None and min_bytes > max_bytes:
         raise ValueError("min_size must be less than or equal to max_size")
     folder_prefix = _folder_prefix(folder)
+    keyword_weight = max(0.0, min(1.0, float(keyword_weight)))
 
     expected = store.get_meta("embedder")
     if expected and expected != embedder.name:
@@ -297,7 +319,7 @@ def search(
         params,
     ).fetchall()
     rows = [row for row in rows if _in_folder(row["path"], folder_prefix)]
-    text_best = _best_per_file(rows, text_query)
+    text_best = _best_per_file(rows, text_query, query, keyword_weight)
     for path, (score, snippet, file_kind, size) in text_best.items():
         if kind and file_kind != kind:
             continue

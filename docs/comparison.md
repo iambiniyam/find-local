@@ -7,7 +7,7 @@
 
 ## What find-local does differently
 
-- One local index across text files, PDFs, and photos, not only a photo library.
+- One local index across text files, PDFs, and photos, with hybrid keyword and embedding ranking.
 - A CLI, a local web UI, and an MCP server over the same SQLite index.
 - No server deployment, account, or background container.
 - The index and the files stay on the machine.
