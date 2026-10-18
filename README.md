@@ -202,7 +202,7 @@ Text and image vectors live in separate spaces. Each modality is normalized befo
 pytest -q
 ```
 
-The suite has 25 tests and uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, the polling watcher, optional OCR chunks, hybrid search, date and size filters, folder filtering, filename relevance, and model mismatch handling.
+The suite has 26 tests and uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, the polling watcher, optional OCR chunks, hybrid search, date and size filters, folder filtering, filename relevance, and model mismatch handling.
 
 ## Roadmap
 
