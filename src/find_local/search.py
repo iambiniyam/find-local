@@ -125,10 +125,10 @@ def _keyword_score(text: str, query: str) -> float:
     wanted = list(dict.fromkeys(_tokens(query)))
     if not wanted:
         return 0.0
-    have = set(_tokens(text))
-    matched = sum(1 for term in wanted if term in have)
+    lowered = text.casefold()
+    matched = sum(1 for term in wanted if term in lowered)
     coverage = matched / len(wanted)
-    phrase = " ".join(wanted) in " ".join(_tokens(text))
+    phrase = " ".join(wanted) in lowered
     return min(1.0, coverage * 0.8 + (0.2 if phrase else 0.0))
 
 

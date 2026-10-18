@@ -40,10 +40,11 @@ def index_command(
     db: Path = typer.Option(db_path(), help="SQLite index path."),
     embedder: str = typer.Option("auto", help="auto or hash (tests)."),
     no_images: bool = typer.Option(False, "--no-images", help="Skip image embeddings."),
+    ocr: bool = typer.Option(False, "--ocr", help="Extract text from images with RapidOCR."),
 ) -> None:
     """Index files, PDFs, and images."""
     store = _store(db)
-    indexer = Indexer(store, build_embedder(embedder, with_images=not no_images))
+    indexer = Indexer(store, build_embedder(embedder, with_images=not no_images), ocr=ocr)
     try:
         stats = indexer.index_paths(paths)
     except IndexMismatch as exc:

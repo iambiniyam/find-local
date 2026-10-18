@@ -34,7 +34,7 @@ def _warm() -> None:
 
 
 threading.Thread(target=_warm, daemon=True).start()
-app = FastAPI(title="find-local", version="0.2.4")
+app = FastAPI(title="find-local", version="0.2.5")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 

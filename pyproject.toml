@@ -1,6 +1,6 @@
 [project]
 name = "find-local"
-version = "0.2.4"
+version = "0.2.5"
 description = "Offline semantic search for files, photos, and PDFs. Search your computer by describing what is in it."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,6 +25,7 @@ dependencies = [
 
 [project.optional-dependencies]
 models = ["sentence-transformers>=3.0", "torch>=2.4", "torchvision>=0.19", "transformers>=4.51"]
+ocr = ["rapidocr-onnxruntime>=1.3"]
 mcp = ["mcp>=1.2"]
 dev = ["pytest>=8.3", "httpx2", "ruff>=0.6"]
 

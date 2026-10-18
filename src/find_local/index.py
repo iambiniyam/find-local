@@ -21,6 +21,7 @@ from .config import (
     TEXT_EXTENSIONS,
 )
 from .embed import Embedder
+from .ocr import ocr_image
 
 
 def classify(path: Path) -> str | None:
@@ -146,9 +147,10 @@ class Store:
 
 
 class Indexer:
-    def __init__(self, store: Store, embedder: Embedder):
+    def __init__(self, store: Store, embedder: Embedder, ocr: bool = False):
         self.store = store
         self.embedder = embedder
+        self.ocr = ocr
 
     def index_paths(self, paths: Iterable[Path]) -> IndexStats:
         existing = self.store.get_meta("embedder")
@@ -198,7 +200,7 @@ class Indexer:
         if kind == "image" and stat.st_size > MAX_IMAGE_BYTES:
             stats.skipped += 1
             return
-        if kind == "image" and not self.embedder.can_images:
+        if kind == "image" and not self.embedder.can_images and not self.ocr:
             stats.skipped += 1
             return
 
@@ -225,14 +227,19 @@ class Indexer:
             text = read_pdf(path)
             self._add_chunks(file_id, chunk_text(text), stats)
         elif kind == "image":
-            with Image.open(path) as image:
-                vectors = self.embedder.encode_images([image.convert("RGB")])
-            if len(vectors):
-                self.store.conn.execute(
-                    "INSERT INTO images (file_id, embedding, dim) VALUES (?, ?, ?)",
-                    (file_id, vectors[0].astype(np.float32).tobytes(), vectors.shape[1]),
-                )
-                stats.images += 1
+            if self.embedder.can_images:
+                with Image.open(path) as image:
+                    vectors = self.embedder.encode_images([image.convert("RGB")])
+                if len(vectors):
+                    self.store.conn.execute(
+                        "INSERT INTO images (file_id, embedding, dim) VALUES (?, ?, ?)",
+                        (file_id, vectors[0].astype(np.float32).tobytes(), vectors.shape[1]),
+                    )
+                    stats.images += 1
+            if self.ocr:
+                text = ocr_image(path)
+                if text:
+                    self._add_chunks(file_id, chunk_text(text), stats)
         self.store.conn.commit()
 
     def _add_chunks(self, file_id: int, chunks: list[str], stats: IndexStats) -> None:

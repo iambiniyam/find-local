@@ -11,6 +11,7 @@
 - A CLI, a local web UI, and an MCP server over the same SQLite index.
 - No server deployment, account, or background container.
 - A polling watcher keeps the index fresh without a daemon.
+- Optional OCR makes screenshots and receipt images searchable by their text.
 - The index and the files stay on the machine.
 
 ## When another tool is a better fit
