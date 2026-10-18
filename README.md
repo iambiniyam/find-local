@@ -9,7 +9,7 @@ Point find-local at one or more folders. Ask for "the invoice from March", "a do
 
 ![find-local web UI](docs/demo.png)
 
-Status: v0.2.6. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
+Status: v0.2.7. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
 
 ## Why
 
@@ -202,7 +202,7 @@ Text and image vectors live in separate spaces. Each modality is normalized befo
 pytest -q
 ```
 
-The suite has 26 tests and uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, the polling watcher, optional OCR chunks, hybrid search, date and size filters, folder filtering, filename relevance, and model mismatch handling.
+The suite has 27 tests, including a Playwright/axe browser check of the initial and empty-search states. and uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, the polling watcher, optional OCR chunks, hybrid search, date and size filters, folder filtering, filename relevance, and model mismatch handling.
 
 ## Roadmap
 
