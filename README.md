@@ -150,6 +150,12 @@ The suite has 5 tests and uses a deterministic hash embedder, so it does not dow
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Related tools
+
+- [shamba](https://github.com/iambiniyam/shamba): offline plant health scanner for gardeners and farmers.
+- [redact](https://github.com/iambiniyam/redact): offline PII redaction for PDFs and photos.
+- [snap2sheet](https://github.com/iambiniyam/snap2sheet): receipt and invoice photos to CSV or Excel.
+
 ## License
 
 MIT. See [THIRD_PARTY.md](THIRD_PARTY.md) for the model licenses.
