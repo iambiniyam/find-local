@@ -28,13 +28,14 @@ uv pip install -e ".[models]"
 
 # optional in mainland China: download models from the mirror
 export HF_ENDPOINT=https://hf-mirror.com
+export HF_HUB_DISABLE_XET=1   # if the hub download stalls
 
 find-local index ~/Documents ~/Pictures
 find-local search "invoice from March"
 find-local serve        # http://127.0.0.1:8790
 ```
 
-The first index downloads two models (~1 GB total) and embeds every file. Later runs only touch changed files.
+The first index downloads two models (~1.1 GB total) and embeds every file. Later runs only touch changed files.
 
 ## Try the bundled demo
 
