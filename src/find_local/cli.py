@@ -12,7 +12,7 @@ from rich.table import Table
 
 from .config import db_path
 from .embed import build_embedder
-from .index import Indexer, Store
+from .index import Indexer, IndexMismatch, Store
 from .search import search as run_search
 
 app = typer.Typer(add_completion=False, help="Search your computer by describing it, offline.")
@@ -33,7 +33,12 @@ def index_command(
     """Index files, PDFs, and images."""
     store = _store(db)
     indexer = Indexer(store, build_embedder(embedder, with_images=not no_images))
-    stats = indexer.index_paths(paths)
+    try:
+        stats = indexer.index_paths(paths)
+    except IndexMismatch as exc:
+        console.print(f"[red]{exc}[/red]")
+        console.print(f"Delete the index and run again:\n  rm {db}")
+        raise typer.Exit(code=2) from exc
     console.print(
         f"[green]indexed[/green] {stats.files} files · {stats.chunks} chunks · "
         f"{stats.images} images · skipped {stats.skipped}"
@@ -56,7 +61,12 @@ def search_command(
 ) -> None:
     """Search the index with natural language."""
     store = _store(db)
-    results = run_search(store, build_embedder(embedder), query, limit=limit, kind=kind)
+    try:
+        results = run_search(store, build_embedder(embedder), query, limit=limit, kind=kind)
+    except IndexMismatch as exc:
+        console.print(f"[red]{exc}[/red]")
+        console.print(f"Delete the index and run again:\n  rm {db}")
+        raise typer.Exit(code=2) from exc
     if json_out:
         typer.echo(json.dumps([result.to_dict() for result in results], indent=2, ensure_ascii=False))
         return
@@ -108,9 +118,12 @@ def doctor() -> None:
     except ImportError:
         console.print("[yellow]sentence-transformers missing: uv pip install 'find-local[models]'[/yellow]")
     path = db_path()
+    embedder = build_embedder("auto")
+    console.print(f"embedder: [bold]{embedder.name}[/bold] ({embedder.dim}d)")
     if path.exists():
         store = Store(path)
         console.print(f"index: {path} · {store.stats()}")
+        console.print(f"index model: {store.get_meta('embedder') or 'legacy or empty'}")
         store.close()
     else:
         console.print(f"index: {path} [yellow](not created yet)[/yellow]")

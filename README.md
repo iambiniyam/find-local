@@ -9,13 +9,29 @@ Point find-local at one or more folders. Ask for "the invoice from March", "a do
 
 ![find-local web UI](docs/demo.png)
 
-Status: early MVP. Text and PDF search use multilingual embeddings. Images use CLIP. It does not read text inside images yet.
+Status: v0.2.0. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
 
 ## Why
 
 Spotlight and Windows Search mostly match file names. They do not know what is inside a PDF or a photo. Cloud search tools can look inside files, but they upload everything first.
 
-find-local builds a local index instead. It handles text files, PDFs, and photos in one query, and it ships an MCP server so coding agents can search the same index.
+find-local builds a local index instead. It handles text files, PDFs, and photos in one query, and ships an MCP server so coding agents can search the same index.
+
+## What is new in 0.2.0
+
+- Qwen3-Embedding 0.6B replaces MiniLM for text and PDFs.
+- SigLIP 2 base replaces CLIP for images.
+- EmbeddingGemma 2 is available as a single-model alternative: `FIND_EMBEDDER=gemma`.
+- Intent-aware score fusion gives visual queries more weight on images and text queries more weight on documents.
+- The web interface was rebuilt with filters, keyboard access, loading skeletons, empty states, error recovery, and local-only messaging.
+- The server warms both models in the background, so the first search is fast after startup.
+
+Because the vectors changed, an index from 0.1.x must be rebuilt:
+
+```bash
+rm ~/.find-local/index.db
+find-local index ~/Documents ~/Pictures
+```
 
 ## Quickstart
 
@@ -25,16 +41,24 @@ cd find-local
 uv venv && source .venv/bin/activate
 uv pip install -e ".[models]"
 
-# optional in mainland China
-export HF_ENDPOINT=https://hf-mirror.com
-export HF_HUB_DISABLE_XET=1
-
 find-local index ~/Documents ~/Pictures
 find-local search "invoice from March"
 find-local serve
 ```
 
-The first index downloads two models, about 1.1 GB in total, and embeds every file. Later runs only process files that changed.
+The first index downloads the models. If Hugging Face is slow or blocked, set the mirror and disable the Xet transfer path:
+
+```bash
+export HF_ENDPOINT=https://hf-mirror.com
+export HF_HUB_DISABLE_XET=1
+```
+
+You can also download the model files separately and point find-local at them:
+
+```bash
+export FIND_QWEN_EMBEDDING_DIR=/path/to/qwen3-embedding
+export FIND_SIGLIP2_DIR=/path/to/siglip2-base
+```
 
 ## Bundled demo
 
@@ -49,12 +73,33 @@ find-local serve
 
 ## Models
 
-| Purpose | Model | Dimensions | Size |
-|---|---|---|---|
-| Text and PDF | sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 | 384 | about 470 MB |
-| Images | sentence-transformers/clip-ViT-B-32 | 512 | about 600 MB |
+| Purpose | Model | Dimensions | Size | License |
+|---|---|---|---|---|
+| Text and PDF | Qwen/Qwen3-Embedding-0.6B | 1024 | about 1.2 GB | Apache 2.0 |
+| Images | google/siglip2-base-patch16-224 | 768 | about 1.5 GB | Apache 2.0 |
+| Optional unified | google/embeddinggemma-2 | 768 | about 1.4 GB | Apache 2.0 |
 
-Override them with `FIND_TEXT_MODEL` and `FIND_IMAGE_MODEL`. Use `--no-images` for a text-only index.
+Switch models with `FIND_EMBEDDER`:
+
+```bash
+FIND_EMBEDDER=gemma find-local index examples    # one model for text and images
+FIND_EMBEDDER=legacy find-local index examples   # MiniLM plus CLIP
+FIND_EMBEDDER=hash find-local index examples     # deterministic, for tests
+```
+
+Use `--no-images` for a text-only index.
+
+## Benchmark
+
+A small labelled set of 10 queries on the bundled corpus. It is a smoke test, not a public benchmark.
+
+| Stack | Top-1 | Top-3 | MRR | Warm query |
+|---|---|---|---|---|
+| Qwen3-Embedding 0.6B plus SigLIP 2 | 0.90 | 1.00 | 0.95 | about 0.1 to 0.4 s |
+| EmbeddingGemma 2 | 0.80 | 1.00 | 0.90 | about 0.1 to 0.3 s |
+| MiniLM plus CLIP | 0.90 | 1.00 | 0.95 | about 0.2 to 1.2 s |
+
+The Qwen and SigLIP pair won on warm latency and uses newer, stronger models for both modalities. See [docs/evaluation.md](docs/evaluation.md) for the queries, method, and caveats.
 
 ## CLI
 
@@ -73,7 +118,18 @@ find-local doctor
 
 ## Web UI
 
-`find-local serve` opens a single search box. Results show the file path, the best matching snippet, the score, and a thumbnail for images.
+`find-local serve` opens a local search page with:
+
+- a single search field and a `/` keyboard shortcut
+- filters for text, PDF, and images
+- result count and query time
+- image thumbnails
+- copy path buttons
+- loading skeletons, empty states, and retry on errors
+- automatic light and dark themes
+- visible focus states and reduced-motion support
+
+The page has no external fonts, scripts, or CDNs.
 
 ## MCP server
 
@@ -97,29 +153,29 @@ The server exposes `search_files`, `index_folder`, and `index_stats`.
 ```
 folder
   |
-  +--> text and PDF chunks --> multilingual embeddings --+
-  |                                                       |
-  +--> images -------------> CLIP embeddings ------------+
-                                                          |
-                                                          v
-                                                    SQLite (WAL)
-                                                          |
-query --> text embedding ---------------------------------+
-      --> CLIP text embedding ----------------------------+
-                                                          |
-                                                          v
-                                              cosine search and merge
+  +--> text and PDF chunks --> Qwen3-Embedding --------+
+  |                                                     |
+  +--> images --------------> SigLIP 2 ----------------+
+                                                        |
+                                                        v
+                                                  SQLite (WAL)
+                                                        |
+query --> Qwen3 query embedding ------------------------+
+      --> SigLIP text embedding -------------------------+
+                                                        |
+                                                        v
+                                     normalized score fusion and ranking
 ```
 
-Text and image vectors live in different spaces. They are searched separately and merged by score. Chunks keep long PDFs searchable, and results show the best matching chunk.
+Text and image vectors live in separate spaces. Each modality is normalized before merging, and visual queries receive a higher image weight. Chunks keep long PDFs searchable, and results show the best matching chunk.
 
 ## Limits
 
-- It does not read text inside images. CLIP matches visual meaning, not words in a screenshot. OCR is on the roadmap.
+- It does not read text inside images. Search matches visual meaning, not words in a screenshot. OCR is on the roadmap.
 - Search is semantic, not exact. For function names and IDs, use ripgrep alongside it.
 - The first index is slow on large folders. Embeddings run on CPU or MPS.
-- The text model covers 50 or more languages, with varying quality.
-- There is no file watcher yet. Run `index` again to pick up changes.
+- A model change requires a reindex. find-local detects the mismatch and tells you.
+- The text model handles many languages, with varying quality.
 
 ## Privacy
 
@@ -134,17 +190,17 @@ Text and image vectors live in different spaces. They are searched separately an
 pytest -q
 ```
 
-The suite has 5 tests and uses a deterministic hash embedder, so it does not download models.
+The suite uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, search, and model mismatch handling.
 
 ## Roadmap
 
 - OCR for text inside images and screenshots
 - a file watcher for continuous indexing
 - hybrid BM25 and vector search
+- a reranker for the top 20 results
 - metadata filters for date, type, size, and folder
-- an on-device reranker for the top 50 results
 - an encrypted index option
-- a recall@10 benchmark on a personal file corpus
+- a recall@10 benchmark on a public file corpus
 
 ## Contributing
 
@@ -152,10 +208,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Related tools
 
-- [shamba](https://github.com/iambiniyam/shamba): offline plant health scanner for gardeners and farmers.
 - [redact](https://github.com/iambiniyam/redact): offline PII redaction for PDFs and photos.
 - [snap2sheet](https://github.com/iambiniyam/snap2sheet): receipt and invoice photos to CSV or Excel.
+- [shamba](https://github.com/iambiniyam/shamba): offline plant health scanner for gardeners and farmers.
 
 ## License
 
-MIT. See [THIRD_PARTY.md](THIRD_PARTY.md) for the model licenses.
+MIT. See [THIRD_PARTY.md](THIRD_PARTY.md) for model and library licenses.

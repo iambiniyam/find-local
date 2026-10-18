@@ -75,6 +75,10 @@ class IndexStats:
     errors: list[str] = field(default_factory=list)
 
 
+class IndexMismatch(RuntimeError):
+    """Raised when the index was built with a different embedding model."""
+
+
 class Store:
     def __init__(self, path: Path | str):
         self.path = Path(path)
@@ -111,9 +115,25 @@ class Store:
             );
             CREATE INDEX IF NOT EXISTS idx_chunks_file ON chunks(file_id);
             CREATE INDEX IF NOT EXISTS idx_images_file ON images(file_id);
+            CREATE TABLE IF NOT EXISTS meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            );
             """
         )
         self.conn.commit()
+
+    def set_meta(self, key: str, value: str) -> None:
+        self.conn.execute(
+            "INSERT INTO meta (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, str(value)),
+        )
+        self.conn.commit()
+
+    def get_meta(self, key: str) -> str | None:
+        row = self.conn.execute("SELECT value FROM meta WHERE key = ?", (key,)).fetchone()
+        return str(row["value"]) if row else None
 
     def stats(self) -> dict[str, int]:
         def count(table: str) -> int:
@@ -131,6 +151,16 @@ class Indexer:
         self.embedder = embedder
 
     def index_paths(self, paths: Iterable[Path]) -> IndexStats:
+        existing = self.store.get_meta("embedder")
+        if existing and existing != self.embedder.name:
+            raise IndexMismatch(
+                f"This index was built with {existing}. Delete it and index again with "
+                f"{self.embedder.name}."
+            )
+        if not existing and self.store.stats()["chunks"] > 0:
+            raise IndexMismatch(
+                "This index has vectors from an older model. Delete it and index again."
+            )
         stats = IndexStats()
         for path in paths:
             for file in self._iter_files(Path(path)):
@@ -138,6 +168,9 @@ class Indexer:
                     self._index_file(file, stats)
                 except Exception as exc:  # noqa: BLE001 - keep going, report at the end
                     stats.errors.append(f"{file}: {exc}")
+        self.store.set_meta("embedder", self.embedder.name)
+        self.store.set_meta("dim", str(self.embedder.dim))
+        self.store.set_meta("image_dim", str(self.embedder.image_dim))
         self.store.conn.commit()
         return stats
 
@@ -163,6 +196,9 @@ class Indexer:
             stats.skipped += 1
             return
         if kind == "image" and stat.st_size > MAX_IMAGE_BYTES:
+            stats.skipped += 1
+            return
+        if kind == "image" and not self.embedder.can_images:
             stats.skipped += 1
             return
 
@@ -202,7 +238,7 @@ class Indexer:
     def _add_chunks(self, file_id: int, chunks: list[str], stats: IndexStats) -> None:
         if not chunks:
             return
-        vectors = self.embedder.encode_texts(chunks)
+        vectors = self.embedder.encode_documents(chunks)
         for ordinal, (chunk, vector) in enumerate(zip(chunks, vectors)):
             self.store.conn.execute(
                 "INSERT INTO chunks (file_id, ordinal, text, embedding, dim) VALUES (?, ?, ?, ?, ?)",

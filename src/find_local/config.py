@@ -6,6 +6,33 @@ import os
 from pathlib import Path
 
 
+def qwen_embedding_dir() -> Path:
+    return Path(
+        os.getenv(
+            "FIND_QWEN_EMBEDDING_DIR",
+            str(Path.home() / ".cache" / "find-local" / "models" / "qwen3-embedding"),
+        )
+    )
+
+
+def siglip2_dir() -> Path:
+    return Path(
+        os.getenv(
+            "FIND_SIGLIP2_DIR",
+            str(Path.home() / ".cache" / "find-local" / "models" / "siglip2-base"),
+        )
+    )
+
+
+def embeddinggemma_dir() -> Path:
+    return Path(
+        os.getenv(
+            "FIND_EMBEDDINGGEMMA_DIR",
+            str(Path.home() / ".cache" / "find-local" / "models" / "embeddinggemma-2"),
+        )
+    )
+
+
 def db_path() -> Path:
     return Path(os.getenv("FIND_DB", str(Path.home() / ".find-local" / "index.db")))
 
@@ -14,6 +41,9 @@ TEXT_MODEL = os.getenv(
     "FIND_TEXT_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 )
 IMAGE_MODEL = os.getenv("FIND_IMAGE_MODEL", "sentence-transformers/clip-ViT-B-32")
+EMBEDDINGGEMMA_MODEL = os.getenv("FIND_EMBEDDINGGEMMA_MODEL", "google/embeddinggemma-2")
+QWEN_EMBEDDING_MODEL = os.getenv("FIND_QWEN_EMBEDDING_MODEL", "Qwen/Qwen3-Embedding-0.6B")
+SIGLIP2_MODEL = os.getenv("FIND_SIGLIP2_MODEL", "google/siglip2-base-patch16-224")
 
 TEXT_EXTENSIONS = {
     ".txt", ".md", ".markdown", ".rst", ".org", ".py", ".js", ".ts", ".tsx", ".jsx",
