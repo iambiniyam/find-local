@@ -9,7 +9,7 @@ Point find-local at one or more folders. Ask for "the invoice from March", "a do
 
 ![find-local web UI](docs/demo.png)
 
-Status: v0.2.5. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
+Status: v0.2.6. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
 
 ## Why
 
@@ -133,7 +133,7 @@ find-local doctor
 - filename and path relevance for exact names
 - a hybrid keyword boost combined with the embedding score
 - a polling watcher for incremental indexing
-- optional OCR for text inside screenshots and photos
+- optional OCR for text inside screenshots and photos, with a process-wide engine cache
 - result count and query time
 - image thumbnails
 - copy path buttons
