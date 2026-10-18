@@ -27,14 +27,14 @@ WARM = {"done": False}
 def _warm() -> None:
     try:
         embedder.warmup()
-    except Exception:  # noqa: BLE001 - a failed warmup should not kill the server
+    except Exception:  # noqa: BLE001, S110 - a failed warmup should not kill the server
         pass
     finally:
         WARM["done"] = True
 
 
 threading.Thread(target=_warm, daemon=True).start()
-app = FastAPI(title="find-local", version="0.2.0")
+app = FastAPI(title="find-local", version="0.2.1")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
@@ -68,7 +68,7 @@ def status() -> JSONResponse:
 
 @app.get("/api/search")
 def api_search(
-    q: str = Query(..., min_length=1),
+    q: str = Query(..., min_length=1, max_length=500),
     limit: int = Query(12, ge=1, le=50),
     kind: str | None = Query(None),
 ) -> JSONResponse:
@@ -79,7 +79,7 @@ def api_search(
         results = run_search(store, embedder, q, limit=limit, kind=kind)
     except IndexMismatch as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
-    except Exception as exc:  # noqa: BLE001 - the UI needs a readable message
+    except Exception as exc:
         raise HTTPException(status_code=503, detail=f"Search is unavailable: {exc}") from exc
     elapsed = round((time.perf_counter() - started) * 1000, 1)
     return JSONResponse(

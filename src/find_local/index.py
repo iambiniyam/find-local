@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import os
 import sqlite3
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterable, Iterator
 
 import numpy as np
 import pymupdf as fitz

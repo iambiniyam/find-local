@@ -9,7 +9,7 @@ Point find-local at one or more folders. Ask for "the invoice from March", "a do
 
 ![find-local web UI](docs/demo.png)
 
-Status: v0.2.0. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
+Status: v0.2.1. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
 
 ## Why
 

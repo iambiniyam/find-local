@@ -1,6 +1,6 @@
 [project]
 name = "find-local"
-version = "0.2.0"
+version = "0.2.1"
 description = "Offline semantic search for files, photos, and PDFs. Search your computer by describing what is in it."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -50,3 +50,6 @@ addopts = "-q"
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.ruff.lint]
+ignore = ["B008"]

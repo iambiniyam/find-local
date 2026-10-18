@@ -6,8 +6,9 @@ import hashlib
 import os
 import re
 import threading
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Protocol, Sequence
+from typing import Protocol
 
 import numpy as np
 from PIL import Image
@@ -51,7 +52,7 @@ def _configure_logging() -> None:
 
         transformers.utils.logging.set_verbosity_error()
         transformers.utils.logging.disable_progress_bar()
-    except Exception:  # noqa: BLE001 - logging setup is best-effort
+    except Exception:  # noqa: BLE001, S110 - logging setup is best-effort
         pass
 
 
@@ -321,7 +322,7 @@ class QwenSiglipEmbedder:
         import torch
         import torch.nn.functional as F
 
-        self.image
+        _ = self.image
         inputs = self._processor(
             images=[image.convert("RGB") for image in images], return_tensors="pt"
         )
@@ -333,7 +334,7 @@ class QwenSiglipEmbedder:
         import torch
         import torch.nn.functional as F
 
-        self.image
+        _ = self.image
         inputs = self._processor(
             text=[query], padding="max_length", truncation=True, return_tensors="pt"
         )

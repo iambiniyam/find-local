@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 - 2026-10-18
+
+- Cap search queries at 500 characters.
+- Clean lint findings and make the lazy image load explicit.
+- No behavior change to ranking.
+
 ## 0.2.0 - 2026-10-18
 
 - Qwen3-Embedding 0.6B replaces MiniLM for text and PDF retrieval.
