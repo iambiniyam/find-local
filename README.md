@@ -9,7 +9,7 @@ Point find-local at one or more folders. Ask for "the invoice from March", "a do
 
 ![find-local web UI](docs/demo.png)
 
-Status: v0.2.3. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
+Status: v0.2.4. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
 
 ## Why
 
@@ -116,6 +116,9 @@ find-local search "invoice" --limit 5 --json
 find-local search "notes" --since 2026-01-01 --until 2026-12-31 --min-size 10KB
 find-local search "beach" --kind image --folder ~/Pictures
 
+# keep the index fresh
+find-local watch ~/Documents --interval 5
+
 # diagnostics
 find-local doctor
 ```
@@ -128,6 +131,7 @@ find-local doctor
 - type filters plus date range, folder prefix, and min/max size
 - filename and path relevance for exact names
 - a hybrid keyword boost combined with the embedding score
+- a polling watcher for incremental indexing
 - result count and query time
 - image thumbnails
 - copy path buttons
@@ -196,12 +200,11 @@ Text and image vectors live in separate spaces. Each modality is normalized befo
 pytest -q
 ```
 
-The suite has 20 tests and uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, hybrid search, date and size filters, folder filtering, filename relevance, and model mismatch handling.
+The suite has 22 tests and uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, the polling watcher, hybrid search, date and size filters, folder filtering, filename relevance, and model mismatch handling.
 
 ## Roadmap
 
 - OCR for text inside images and screenshots
-- a file watcher for continuous indexing
 - a reranker for the top 20 results
 - an encrypted index option
 - a recall@10 benchmark on a public file corpus

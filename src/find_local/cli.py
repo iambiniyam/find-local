@@ -15,6 +15,7 @@ from .config import db_path
 from .embed import build_embedder
 from .index import Indexer, IndexMismatch, Store
 from .search import search as run_search
+from .watch import watch as run_watch
 
 app = typer.Typer(add_completion=False, help="Search your computer by describing it, offline.")
 console = Console(width=130)
@@ -156,6 +157,19 @@ def doctor() -> None:
         store.close()
     else:
         console.print(f"index: {path} [yellow](not created yet)[/yellow]")
+
+
+@app.command()
+def watch(
+    paths: list[Path] = typer.Argument(..., exists=True),
+    db: Path = typer.Option(db_path(), help="SQLite index path."),
+    embedder: str = typer.Option("auto"),
+    interval: float = typer.Option(5.0, "--interval", min=0.5, help="Polling interval in seconds."),
+) -> None:
+    """Index now, then keep watching for changed files."""
+
+
+    run_watch(paths, db, embedder, interval)
 
 
 @app.command()

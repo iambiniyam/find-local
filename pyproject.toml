@@ -1,6 +1,6 @@
 [project]
 name = "find-local"
-version = "0.2.3"
+version = "0.2.4"
 description = "Offline semantic search for files, photos, and PDFs. Search your computer by describing what is in it."
 readme = "README.md"
 requires-python = ">=3.10"

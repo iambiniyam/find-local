@@ -10,6 +10,7 @@
 - One local index across text files, PDFs, and photos, with hybrid keyword and embedding ranking.
 - A CLI, a local web UI, and an MCP server over the same SQLite index.
 - No server deployment, account, or background container.
+- A polling watcher keeps the index fresh without a daemon.
 - The index and the files stay on the machine.
 
 ## When another tool is a better fit
