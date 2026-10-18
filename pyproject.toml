@@ -1,7 +1,7 @@
 [project]
 name = "find-local"
 version = "0.1.0"
-description = "Search your computer by describing it — offline semantic search for files, photos, and PDFs."
+description = "Offline semantic search for files, photos, and PDFs. Search your computer by describing what is in it."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -30,6 +30,11 @@ dev = ["pytest>=8.3", "httpx2", "ruff>=0.6"]
 
 [project.scripts]
 find-local = "find_local.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/iambiniyam/find-local"
+Repository = "https://github.com/iambiniyam/find-local"
+Issues = "https://github.com/iambiniyam/find-local/issues"
 
 [build-system]
 requires = ["hatchling"]

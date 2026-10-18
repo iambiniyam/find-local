@@ -23,7 +23,7 @@ INDEX_HTML = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>find-local — search by describing</title>
+<title>find-local: search by describing</title>
 <style>
   :root { color-scheme: light dark; --ink:#131a16; --paper:#f6f4ea; --green:#1f7a4d; --line:#ddd7c6; }
   * { box-sizing:border-box; }
@@ -50,7 +50,7 @@ INDEX_HTML = """<!doctype html>
 </header>
 <main>
   <div class="bar">
-    <input id="q" type="search" placeholder="invoice from March, dog on a beach, error screenshot…" autofocus>
+    <input id="q" type="search" placeholder="invoice from March, dog on a beach, error screenshot..." autofocus>
     <button id="go">Search</button>
   </div>
   <div id="out"></div>
@@ -61,7 +61,7 @@ function esc(s) { const d = document.createElement('div'); d.textContent = s == 
 async function run() {
   const query = q.value.trim();
   if (!query) return;
-  out.innerHTML = '<p class="empty">Searching locally…</p>';
+  out.innerHTML = '<p class="empty">Searching locally...</p>';
   const res = await fetch('/api/search?q=' + encodeURIComponent(query) + '&limit=12');
   const data = await res.json();
   if (!data.results.length) { out.innerHTML = '<p class="empty">Nothing yet. Index a folder first: find-local index ~/Documents</p>'; return; }

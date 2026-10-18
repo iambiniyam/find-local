@@ -15,7 +15,7 @@ from .embed import build_embedder
 from .index import Indexer, Store
 from .search import search as run_search
 
-app = typer.Typer(add_completion=False, help="Search your computer by describing it — offline.")
+app = typer.Typer(add_completion=False, help="Search your computer by describing it, offline.")
 console = Console(width=130)
 
 
@@ -41,7 +41,7 @@ def index_command(
     for error in stats.errors[:10]:
         console.print(f"[red]! {error}[/red]")
     if len(stats.errors) > 10:
-        console.print(f"[red]… and {len(stats.errors) - 10} more errors[/red]")
+        console.print(f"[red]... and {len(stats.errors) - 10} more errors[/red]")
     console.print(f"index: {db}")
 
 
@@ -63,7 +63,7 @@ def search_command(
     if not results:
         console.print("[yellow]No results. Is the folder indexed?[/yellow]")
         return
-    table = Table(title=f"find-local · “{query}”", expand=False)
+    table = Table(title=f'find-local: "{query}"', expand=False)
     table.add_column("Score", justify="right", width=6)
     table.add_column("Kind", width=6)
     table.add_column("Path", max_width=52, overflow="ellipsis")
