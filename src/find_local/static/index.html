@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
   <title>find-local: search your files by describing them</title>
-  <link rel="stylesheet" href="/static/app.css?v=3">
-  <script src="/static/app.js?v=3" defer></script>
+  <link rel="stylesheet" href="/static/app.css?v=4">
+  <script src="/static/app.js?v=4" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -57,6 +57,43 @@
           <button type="button" class="chip" data-kind="pdf" aria-pressed="false">PDF</button>
           <button type="button" class="chip" data-kind="image" aria-pressed="false">Images</button>
         </div>
+        <details id="filter-more" class="filter-more">
+          <summary>
+            <span>Date, folder, and size</span>
+            <span id="active-filters" class="filter-count" hidden></span>
+          </summary>
+          <div class="filter-grid">
+            <div class="filter-field">
+              <label for="since">Modified from</label>
+              <input id="since" name="since" type="date" autocomplete="off"
+                     aria-describedby="filter-help">
+            </div>
+            <div class="filter-field">
+              <label for="until">Modified to</label>
+              <input id="until" name="until" type="date" autocomplete="off"
+                     aria-describedby="filter-help">
+            </div>
+            <div class="filter-field filter-field--folder">
+              <label for="folder">Folder prefix</label>
+              <input id="folder" name="folder" type="text" autocomplete="off" spellcheck="false"
+                     placeholder="~/Documents" aria-describedby="filter-help">
+            </div>
+            <div class="filter-field">
+              <label for="min-size">Min size</label>
+              <input id="min-size" name="min_size" type="text" autocomplete="off" placeholder="10MB"
+                     aria-describedby="filter-help">
+            </div>
+            <div class="filter-field">
+              <label for="max-size">Max size</label>
+              <input id="max-size" name="max_size" type="text" autocomplete="off" placeholder="500MB"
+                     aria-describedby="filter-help">
+            </div>
+            <p id="filter-help" class="filter-help">Dates use the file's last modified day, both inclusive. Sizes accept B, KB, MB, GB, or TB.</p>
+            <div class="filter-actions">
+              <button id="reset-filters" class="btn-ghost" type="button">Reset filters</button>
+            </div>
+          </div>
+        </details>
       </form>
     </section>
 

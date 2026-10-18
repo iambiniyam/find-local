@@ -10,6 +10,17 @@ const warmNote = document.getElementById("warm-note");
 const resultsHead = document.querySelector(".results-head");
 const toast = document.getElementById("toast");
 const chips = Array.from(document.querySelectorAll(".chip"));
+const filterDetails = document.getElementById("filter-more");
+const filterBadge = document.getElementById("active-filters");
+const resetFilters = document.getElementById("reset-filters");
+const filterInputs = {
+  since: document.getElementById("since"),
+  until: document.getElementById("until"),
+  folder: document.getElementById("folder"),
+  min_size: document.getElementById("min-size"),
+  max_size: document.getElementById("max-size"),
+};
+const FILTER_KEYS = Object.keys(filterInputs);
 
 const state = {
   kind: "",
@@ -105,6 +116,23 @@ function setActiveChip(button) {
     chip.classList.toggle("is-active", active);
     chip.setAttribute("aria-pressed", active ? "true" : "false");
   });
+}
+
+function collectFilters() {
+  const values = {};
+  FILTER_KEYS.forEach((key) => {
+    const field = filterInputs[key];
+    const value = field ? field.value.trim() : "";
+    if (value) values[key] = value;
+  });
+  return values;
+}
+
+function updateFilterBadge() {
+  if (!filterBadge) return;
+  const count = Object.keys(collectFilters()).length;
+  filterBadge.hidden = count === 0;
+  filterBadge.textContent = count === 1 ? "1 active" : `${count} active`;
 }
 
 function renderSkeleton() {
@@ -221,6 +249,10 @@ async function search({ focus = false } = {}) {
 
   const params = new URLSearchParams({ q: query, limit: "12" });
   if (state.kind) params.set("kind", state.kind);
+  const filters = collectFilters();
+  FILTER_KEYS.forEach((key) => {
+    if (filters[key]) params.set(key, filters[key]);
+  });
 
   try {
     const response = await fetch(`/api/search?${params.toString()}`, {
@@ -248,6 +280,11 @@ function updateUrl() {
   else params.delete("q");
   if (state.kind) params.set("kind", state.kind);
   else params.delete("kind");
+  const filters = collectFilters();
+  FILTER_KEYS.forEach((key) => {
+    if (filters[key]) params.set(key, filters[key]);
+    else params.delete(key);
+  });
   const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
   window.history.replaceState(null, "", next);
 }
@@ -263,6 +300,34 @@ function debounce(callback, wait) {
 const debouncedSearch = debounce(() => {
   if (input.value.trim().length >= 2) search();
 }, 320);
+
+function onFilterChange() {
+  updateFilterBadge();
+  if (input.value.trim()) search();
+  else updateUrl();
+}
+
+const debouncedFilterChange = debounce(onFilterChange, 350);
+
+Object.values(filterInputs).forEach((field) => {
+  if (!field) return;
+  field.addEventListener("input", () => {
+    updateFilterBadge();
+    debouncedFilterChange();
+  });
+  field.addEventListener("change", onFilterChange);
+});
+
+if (resetFilters) {
+  resetFilters.addEventListener("click", () => {
+    Object.values(filterInputs).forEach((field) => {
+      if (field) field.value = "";
+    });
+    updateFilterBadge();
+    if (input.value.trim()) search();
+    else updateUrl();
+  });
+}
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -371,6 +436,15 @@ async function start() {
     const chip = chips.find((item) => item.dataset.kind === kind);
     if (chip) setActiveChip(chip);
   }
+  FILTER_KEYS.forEach((key) => {
+    const value = params.get(key);
+    const field = filterInputs[key];
+    if (!value || !field) return;
+    if ((key === "since" || key === "until") && !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    field.value = value;
+  });
+  updateFilterBadge();
+  if (filterDetails && Object.keys(collectFilters()).length) filterDetails.open = true;
   if (initial) {
     input.value = initial;
     clearButton.hidden = false;

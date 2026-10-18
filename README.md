@@ -9,9 +9,11 @@ Point find-local at one or more folders. Ask for "the invoice from March", "a do
 
 ![find-local web UI](docs/demo.png)
 
-Status: v0.2.1. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
+Status: v0.2.2. Text search uses Qwen3-Embedding 0.6B. Image search uses SigLIP 2. The interface has filters, keyboard shortcuts, loading states, and dark mode.
 
 ## Why
+
+See [how this compares](docs/comparison.md) with self-hosted photo libraries and other local search tools.
 
 Spotlight and Windows Search mostly match file names. They do not know what is inside a PDF or a photo. Cloud search tools can look inside files, but they upload everything first.
 
@@ -111,6 +113,8 @@ find-local index ~/Documents ~/Downloads ~/Pictures
 find-local search "offline privacy notes"
 find-local search "beach" --kind image
 find-local search "invoice" --limit 5 --json
+find-local search "notes" --since 2026-01-01 --until 2026-12-31 --min-size 10KB
+find-local search "beach" --kind image --folder ~/Pictures
 
 # diagnostics
 find-local doctor
@@ -121,7 +125,8 @@ find-local doctor
 `find-local serve` opens a local search page with:
 
 - a single search field and a `/` keyboard shortcut
-- filters for text, PDF, and images
+- type filters plus date range, folder prefix, and min/max size
+- filename and path relevance for exact names
 - result count and query time
 - image thumbnails
 - copy path buttons
@@ -190,7 +195,7 @@ Text and image vectors live in separate spaces. Each modality is normalized befo
 pytest -q
 ```
 
-The suite uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, search, and model mismatch handling.
+The suite has 18 tests and uses a deterministic hash embedder, so it does not download models. It covers indexing, PDF text, incremental updates, search, date and size filters, folder filtering, filename relevance, and model mismatch handling.
 
 ## Roadmap
 
@@ -198,7 +203,6 @@ The suite uses a deterministic hash embedder, so it does not download models. It
 - a file watcher for continuous indexing
 - hybrid BM25 and vector search
 - a reranker for the top 20 results
-- metadata filters for date, type, size, and folder
 - an encrypted index option
 - a recall@10 benchmark on a public file corpus
 

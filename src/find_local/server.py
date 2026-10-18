@@ -34,7 +34,7 @@ def _warm() -> None:
 
 
 threading.Thread(target=_warm, daemon=True).start()
-app = FastAPI(title="find-local", version="0.2.1")
+app = FastAPI(title="find-local", version="0.2.2")
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
@@ -71,12 +71,30 @@ def api_search(
     q: str = Query(..., min_length=1, max_length=500),
     limit: int = Query(12, ge=1, le=50),
     kind: str | None = Query(None),
+    since: str | None = Query(None, description="Modified on or after this date (YYYY-MM-DD)."),
+    until: str | None = Query(None, description="Modified on or before this date (YYYY-MM-DD)."),
+    min_size: str | None = Query(None, description="Minimum file size, e.g. 10MB."),
+    max_size: str | None = Query(None, description="Maximum file size, e.g. 10MB."),
+    folder: str | None = Query(None, description="Only files inside this folder prefix."),
 ) -> JSONResponse:
     if kind not in {None, "text", "pdf", "image"}:
         raise HTTPException(status_code=400, detail="kind must be text, pdf, or image")
     started = time.perf_counter()
     try:
-        results = run_search(store, embedder, q, limit=limit, kind=kind)
+        results = run_search(
+            store,
+            embedder,
+            q,
+            limit=limit,
+            kind=kind,
+            since=since,
+            until=until,
+            min_size=min_size,
+            max_size=max_size,
+            folder=folder,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except IndexMismatch as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:

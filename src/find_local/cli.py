@@ -10,6 +10,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from . import __version__
 from .config import db_path
 from .embed import build_embedder
 from .index import Indexer, IndexMismatch, Store
@@ -17,6 +18,15 @@ from .search import search as run_search
 
 app = typer.Typer(add_completion=False, help="Search your computer by describing it, offline.")
 console = Console(width=130)
+
+
+@app.callback(invoke_without_command=True)
+def _root(
+    version: bool = typer.Option(False, "--version", is_eager=True, help="Show the version and exit."),
+) -> None:
+    if version:
+        console.print(__version__)
+        raise typer.Exit()
 
 
 def _store(path: Path) -> Store:
@@ -56,13 +66,32 @@ def search_command(
     db: Path = typer.Option(db_path(), help="SQLite index path."),
     limit: int = typer.Option(10, "--limit", "-n"),
     kind: str | None = typer.Option(None, help="Filter: text, pdf, or image."),
+    since: str | None = typer.Option(None, "--since", help="Modified on or after this date (YYYY-MM-DD)."),
+    until: str | None = typer.Option(None, "--until", help="Modified on or before this date (YYYY-MM-DD)."),
+    min_size: str | None = typer.Option(None, "--min-size", help="Minimum file size, e.g. 10MB."),
+    max_size: str | None = typer.Option(None, "--max-size", help="Maximum file size, e.g. 10MB."),
+    folder: str | None = typer.Option(None, "--folder", help="Only files inside this folder prefix."),
     embedder: str = typer.Option("auto"),
     json_out: bool = typer.Option(False, "--json"),
 ) -> None:
     """Search the index with natural language."""
     store = _store(db)
     try:
-        results = run_search(store, build_embedder(embedder), query, limit=limit, kind=kind)
+        results = run_search(
+            store,
+            build_embedder(embedder),
+            query,
+            limit=limit,
+            kind=kind,
+            since=since,
+            until=until,
+            min_size=min_size,
+            max_size=max_size,
+            folder=folder,
+        )
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
     except IndexMismatch as exc:
         console.print(f"[red]{exc}[/red]")
         console.print(f"Delete the index and run again:\n  rm {db}")
